@@ -5,3 +5,4 @@ weights
 **/.ipynb_checkpoints/
 **/.idea/*
 **/.pytest_cache/
+logs

@@ -52,3 +52,11 @@ dmypy.json
 res_images_iou
 iou_resnet50_csv_06.h5
 
+Dataset
+yolo
+
+**/__pycache__/
+**/.ipynb_checkpoints/
+**/.idea/*
+**/.pytest_cache/
+logs

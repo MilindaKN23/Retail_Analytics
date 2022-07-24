@@ -65,14 +65,18 @@ class DuplicateMerger(object):
         heat_map = cv2.convertScaleAbs(heat_map)
         h2, heat_map = cv2.threshold(heat_map, 4, 255, cv2.THRESH_TOZERO)
         contours = cv2.findContours(numpy.ndarray.copy(heat_map), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # print("\n\nContour", contours[0])
         
         candidates = self.find_new_candidates(contours[0], heat_map, data, original_detection_centers, image)
+        print("71 candidates",candidates)
         candidates = self.map_original_boxes_to_new_boxes(candidates, original_detection_centers)
+        print("73 candidates",candidates)
 
         # TODO time optimization: parallelize contours/clusters resolvers.
         # TODO time optimization: convert numpy to tensorflow/keras
         best_detection_ids = {}
         filtered_data = pandas.DataFrame(columns=data.columns)
+        print("candidates",candidates)
         for i, candidate in candidates.items():
             label = candidate['original_detection_ids']
             original_detections = data.ix[label]
@@ -101,15 +105,17 @@ class DuplicateMerger(object):
             #     best_detection['y2'] = med_y + med_h / 2
 
             best_detection_ids[best_detection_id] = best_detection
-            filtered_data = filtered_data.append(best_detection)
+            print("Best_Detection",best_detection)
+            filtered_data.append(best_detection)
 
         # to handle overlap between contour bboxes
+        print("\n\nFiltered data", filtered_data)
         filtered_data = perform_nms_on_image_dataframe(filtered_data, 0.3)
-
         return filtered_data
 
     def find_new_candidates(self, contours, heat_map, data, original_detection_centers, image):
         candidates = []
+        # print("contours[1]",contours[1])
         for contour_i, contour in enumerate(contours[1]):
             contour_bounding_rect = cv2.boundingRect(contour)
 

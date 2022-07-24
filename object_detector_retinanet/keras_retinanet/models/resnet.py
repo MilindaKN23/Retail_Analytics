@@ -17,7 +17,7 @@ limitations under the License.
 import keras
 import keras_resnet
 import keras_resnet.models
-from keras.utils import get_file
+from tensorflow.keras.utils import get_file
 
 from . import retinanet
 from . import Backbone

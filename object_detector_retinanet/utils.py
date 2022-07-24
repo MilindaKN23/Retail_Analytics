@@ -40,7 +40,7 @@ def root_dir():
     if platform.system() == 'Linux':
         return os.path.join(os.getenv('HOME'), 'Documents', 'SKU110K')
     elif platform.system() == 'Windows':
-        return os.path.abspath('C:/Users/{}/Documents/Datasets/PVL/SKU110K_fixed/'.format(os.getenv('username')))
+        return os.path.abspath('D:\PVL\Retail Analytics\SKU110K\SKU110K_fixed')
 
 
 def image_path():

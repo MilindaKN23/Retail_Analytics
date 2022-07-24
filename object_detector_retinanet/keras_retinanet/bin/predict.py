@@ -44,7 +44,7 @@ def create_generator(args):
     """
     if args.dataset_type == 'csv':
         validation_generator = CSVGenerator(
-            args.annotations,
+                # args.annotations,
             args.classes,
             image_min_side=args.image_min_side,
             image_max_side=args.image_max_side,

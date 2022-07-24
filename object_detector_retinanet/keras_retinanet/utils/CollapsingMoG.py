@@ -2,7 +2,8 @@ import math
 
 import scipy
 import numpy
-
+import threading
+import time
 import signal
 
 class Timeout():
@@ -15,7 +16,7 @@ class Timeout():
         self.sec = sec
 
     def __enter__(self):
-        signal.signal(signal.SIGALRM, self.raise_timeout)
+        signal.signal(signal.SIGABRT, self.raise_timeout)
         signal.setitimer(signal.ITIMER_REAL, self.sec)
 
     def __exit__(self, *args):
@@ -24,6 +25,57 @@ class Timeout():
     def raise_timeout(self, *args):
         raise Timeout.Timeout()
 
+class Ticker(threading.Thread):
+  """A very simple thread that merely blocks for :attr:`interval` and sets a
+  :class:`threading.Event` when the :attr:`interval` has elapsed. It then waits
+  for the caller to unset this event before looping again.
+
+  Example use::
+
+    t = Ticker(1.0) # make a ticker
+    t.start() # start the ticker in a new thread
+    try:
+      while t.evt.wait(): # hang out til the time has elapsed
+        t.evt.clear() # tell the ticker to loop again
+        print time.time(), "FIRING!"
+    except:
+      t.stop() # tell the thread to stop
+      t.join() # wait til the thread actually dies
+
+  """
+  # SIGALRM based timing proved to be unreliable on various python installs,
+  # so we use a simple thread that blocks on sleep and sets a threading.Event
+  # when the timer expires, it does this forever.
+  def __init__(self, interval):
+    super(Ticker, self).__init__()
+    self.interval = interval
+    self.evt = threading.Event()
+    self.evt.clear()
+    self.should_run = threading.Event()
+    self.should_run.set()
+
+  def stop(self):
+    """Stop the this thread. You probably want to call :meth:`join` immediately
+    afterwards
+    """
+    self.should_run.clear()
+
+  def consume(self):
+    was_set = self.evt.is_set()
+    if was_set:
+      self.evt.clear()
+    return was_set
+
+  def run(self):
+    """The internal main method of this thread. Block for :attr:`interval`
+    seconds before setting :attr:`Ticker.evt`
+
+    .. warning::
+      Do not call this directly!  Instead call :meth:`start`.
+    """
+    while self.should_run.is_set():
+      time.sleep(self.interval)
+      self.evt.set()
 
 def agglomerative_init(alpha, mu, covariance, n, k):
 
@@ -93,8 +145,11 @@ def gaussian_kl_diag(mu1, cov1, mu2, cov2):
 
 
 def collapse(original_detection_centers, k, offset, max_iter=100, epsilon=1e-100):
+    t = Ticker(3.0)
+    t.start()
     try:
-        with Timeout(3):
+
+        with t.evt.wait():
             n = original_detection_centers.shape[0]
             mu_x = original_detection_centers.x - offset[0]
             mu_y = original_detection_centers.y - offset[1]
@@ -106,7 +161,9 @@ def collapse(original_detection_centers, k, offset, max_iter=100, epsilon=1e-100
             covariance = numpy.array([[sigma_xx.values, sigma_xx.values * 0], [0 * sigma_yy.values, sigma_yy.values]]).transpose()
 
             beta, mu_prime, covariance_prime = agglomerative_init(alpha.copy(), mu.copy(), covariance.copy(), n, k)
-    except Timeout.Timeout:
+    except:
+        t.stop()
+        t.join()
         print ("agglomerative_init Timeout - using fallback")
         return None, None, None
 

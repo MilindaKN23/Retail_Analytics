@@ -48,4 +48,4 @@ def image_path():
 
 
 def annotation_path():
-    return os.path.join(root_dir(), ANNOTATION_FOLDER)
+    return os.path.join(ANNOTATION_FOLDER)

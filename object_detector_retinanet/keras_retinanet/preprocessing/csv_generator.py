@@ -184,7 +184,7 @@ class CSVGenerator(Generator):
 
     def __init__(
             self,
-            csv_data_file,
+            #csv_data_file,
             csv_class_file,
             base_dir=None,
             **kwargs
@@ -201,9 +201,7 @@ class CSVGenerator(Generator):
         self.base_dir = base_dir
 
         # Take base_dir from annotations file if not explicitly specified.
-        if self.base_dir is None:
-            self.base_dir = os.path.dirname(csv_data_file)
-
+        
         # parse the provided class file
         try:
             with _open_for_csv(csv_class_file) as file:
@@ -219,13 +217,9 @@ class CSVGenerator(Generator):
         self.image_existence = _read_images(self.base_dir)
 
         # csv with img_path, x1, y1, x2, y2, class_name
-        try:
-            with _open_for_csv(csv_data_file) as file:
-                self.image_data = _read_annotations(csv.reader(file, delimiter=','), self.classes, self.base_dir,
-                                                    self.image_existence)
-        except ValueError as e:
-            raise_from(ValueError('invalid CSV annotations file: {}: {}'.format(csv_data_file, e)), None)
-        self.image_names = list(self.image_data.keys())
+        self.image_names = []
+        for img_file in tqdm(os.listdir(self.base_dir)):
+            self.image_names.append(os.path.join(self.base_dir, img_file))
 
         super(CSVGenerator, self).__init__(**kwargs)
 

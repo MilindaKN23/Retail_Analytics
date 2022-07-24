@@ -96,12 +96,6 @@ def predict(
 
         if save_path is not None:
             create_folder(save_path)
-            # print("\n\n********")
-            # print(generator.load_annotations(i))
-            # print("\n\n********")
-            # print(filtered_boxes)
-            # print(filtered_labels)
-            # print(filtered_scores)
 
             # draw_annotations(raw_image, generator.load_annotations(i), label_to_name=generator.label_to_name)
             draw_detections(raw_image, np.asarray(filtered_boxes), np.asarray(filtered_scores),
@@ -114,9 +108,3 @@ def predict(
             all_detections[i][label] = image_detections[image_detections[:, -1] == label, :-1]
 
         print('{}/{}'.format(i + 1, generator.size()), end='\r')
-
-    # Save annotations csv file
-    with open(res_file, 'w') as fl_csv:
-        writer = csv.writer(fl_csv)
-        writer.writerows(csv_data_lst)
-    print("Saved output.csv file")

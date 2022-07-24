@@ -65,18 +65,14 @@ class DuplicateMerger(object):
         heat_map = cv2.convertScaleAbs(heat_map)
         h2, heat_map = cv2.threshold(heat_map, 4, 255, cv2.THRESH_TOZERO)
         contours = cv2.findContours(numpy.ndarray.copy(heat_map), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        # print("\n\nContour", contours[0])
         
         candidates = self.find_new_candidates(contours[0], heat_map, data, original_detection_centers, image)
-        #print("71 candidates",candidates)
         candidates = self.map_original_boxes_to_new_boxes(candidates, original_detection_centers)
-        #print("73 candidates",candidates)
 
         # TODO time optimization: parallelize contours/clusters resolvers.
         # TODO time optimization: convert numpy to tensorflow/keras
         best_detection_ids = {}
         filtered_data = pandas.DataFrame(columns=data.columns)
-        #print("candidates",candidates)
         for i, candidate in candidates.items():
             label = candidate['original_detection_ids']
             original_detections = data.loc[label]
@@ -105,23 +101,17 @@ class DuplicateMerger(object):
             #     best_detection['y2'] = med_y + med_h / 2
 
             best_detection_ids[best_detection_id] = best_detection
-            #print("Best_Detection",best_detection)
             best_detection = pandas.DataFrame([best_detection.values[:10]], columns=filtered_data.columns)
-            #print(best_detection)
             filtered_data = pandas.concat([filtered_data, best_detection])
    #         filtered_data.append(best_detection)
 
         # to handle overlap between contour bboxes
-        #print("\n\nFiltered data", filtered_data)
-        #print(filtered_data)
         filtered_data = perform_nms_on_image_dataframe(filtered_data, 0.3)
         return filtered_data
 
     def find_new_candidates(self, contours, heat_map, data, original_detection_centers, image):
         candidates = []
-        # print("contours[1]",contours[1])
         for contour_i, contour in enumerate(contours):
-            #print(candidates)
             contour_bounding_rect = cv2.boundingRect(contour)
 
             contour_bbox = extract_boxes_from_edge_boxes(numpy.array(contour_bounding_rect))[0]
@@ -131,11 +121,9 @@ class DuplicateMerger(object):
             offset = contour_bbox[0:2]
             mu = None
             cov = None
-            #print(original_detection_centers)
             original_indexes = self.get_contour_indexes(contour, contour_bbox, original_detection_centers['x'],
                                                         original_detection_centers['y'])
             n = original_indexes.values.sum()
-            #print(n)
             if n > 0 and box_width > 3 and box_height > 3:
                 curr_data = data[original_indexes]
                 w = (curr_data['x2'] - curr_data['x1']) * Params.box_size_factor
@@ -149,20 +137,17 @@ class DuplicateMerger(object):
                 sub_heat_map = numpy.copy(heat_map[contour_bbox[BOX.Y1]:contour_bbox[BOX.Y2],
                                           contour_bbox[BOX.X1]:contour_bbox[BOX.X2]])
                 k = max(1, int(approximate_number_of_objects))
-                # print n,k
                 if k >= 1 and n > k:
                     #if k > Params.min_k:
                     #    beta, mu, cov = collapse(original_detection_centers[original_indexes].copy(), k, offset,
                     #                             max_iter=20, epsilon=1e-10)
                     if mu is None:  # k<=Params.min_k or EM failed
-                        print (n, k, ' k<=Params.min_k or EM failed')
                         self.perform_nms(candidates, contour_i, curr_data)
                     else:  # successful EM
                         cov, mu, num, roi = self.remove_redundant(contour_bbox, cov, k, mu, image, sub_heat_map)
                         self.set_candidates(candidates, cov, heat_map, mu, num, offset, roi, sub_heat_map)
                 elif (k == n):
                     pass
-                    # print n, k, ' k==n'
                     # self.perform_nms(candidates, contour_i, curr_data)
 
         return candidates
@@ -273,7 +258,6 @@ class DuplicateMerger(object):
                 candidates.append({'box': curr_box, 'original_detection_ids': []})
 
     def get_contour_indexes(self, contour, contour_bbox, x, y):
-        #print(contour_bbox[BOX.Y1]<=y)
         original_indexes = (contour_bbox[BOX.X1] <= x) & (x <= contour_bbox[BOX.X2]) & (
                 contour_bbox[BOX.Y1] <= y) & (y <= contour_bbox[BOX.Y2])
         return original_indexes

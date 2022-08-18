@@ -52,7 +52,7 @@ dmypy.json
 res_images_iou
 iou_resnet50_csv_06.h5
 
-Dataset
+SKU110K
 yolo
 
 __pycache__/
@@ -64,3 +64,6 @@ logs
 Test_Images
 
 weights
+
+object_detector_retinanet
+Output
